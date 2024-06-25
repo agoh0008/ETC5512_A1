@@ -1,0 +1,105 @@
+---
+title: 'Data on wedge-tailed eagle populations near Longreach and Adelaide'
+author: "Prepared by Alexandra Goh"
+date: 'March 24, 2023'
+header-includes: 
+- \setcounter{secnumdepth}{0}
+output: 
+  html_document:
+    theme: simplex
+    toc_float: yes
+    toc: yes
+    css: assignment.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      eval = TRUE, 
+                      cache = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE)
+options(width=80, digits=3)
+```
+
+
+# Data description
+
+The data is in the file `eagle.rda` in the `data` directory, extracted from the Atlas of Living Australia website. It contains these variables:
+
+- **Latitude and Longitude:** specifies the geographic coordinates of the location where each wedge-tailed eagle sighting was reported
+- **eventDate:** contains the dates of each wedge-tailed eagle sighting 
+- **scientificName**: scientific name of the wedge-tailed eagle, which is "Aquila (Uroaetus) audax" (iNaturalist & Atlas of Living Australia, n.d.)
+- **taxonConceptID:** unique identifier assigned to the wedge-tailed eagle species that is used to link occurrence records/images and other associated data
+- **recordID:** unique identifier assigned to each individual occurrence record (i.e. for each wedge-tailed eagle sighting)
+- **dataResourceName:** name of the data source or provider that contributed the occurrence record, indicating origin of the data 
+- **occurrenceStatus:** status of each occurrence record, which provides information on quality and reliability of the record. For instance, "present" infers that a wedge-tailed eagle was indeed observed/sighted at the location and time specified in the occurrence record. 
+
+The population of this data set would be all the wedge-tailed eagles existing in the wild across the whole of Australia. However, as the population is too large to be measured, data on only a sample of the population is collected. In this case, the sample would be wedge-tailed eagles that have been observed and reported as sightings in Longreach or Adelaide, which are then recorded in the Atlas of Living Australia database. This sample can be considered to be representative of the population as we can use information from these observations to estimate various population parameters such as distribution of wedge-tailed eagle sightings, abundance (estimated number of wedge-tailed eagles in those particular areas) and habitat preferences - all of which are useful for the Qantas analytics team who are interested in knowing which of the two areas (Longreach or Adelaide) have more wedge-tailed eagles; the location with the lower wedge-tailed eagle population would be more suitable to set up a storage facility so as to avoid any negative ecological impacts and bird-strike risk.   
+
+This is open data as indicated by the Creative Commons Attribution 3.0 Australia License, whereby users are free to share (copy and redistribute the material in any medium or format) and adapt the material for any purpose, even commercially, provided they follow the license terms (Creative Commons, n.d.). License terms include attribution/provision of appropriate credit in any reasonable manner but not in any way that suggests the licensor endorses the user, along with no additional restrictions whereby users are prohibited from applying legal terms/technological measures that legally restrict others from doing anything the license permits.  
+
+
+To get started in reading the data:
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(galah)
+library(here)
+```
+
+```{r}
+galah_config(email = "agoh0008@student.monash.edu",
+             download_reason_id = 10, 
+             verbose = TRUE)
+eagle <- ala_occurrences(
+  taxa = select_taxa("Aquila (Uroaetus) audax"))
+eagle <- eagle %>% 
+  rename(Longitude = decimalLongitude,
+         Latitude = decimalLatitude) %>%
+  mutate(eventDate = as.Date(eventDate)) %>%
+  filter(!is.na(eventDate)) %>%
+  filter(!is.na(Longitude)) %>%
+  filter(!is.na(Latitude))
+save(eagle, file=here::here("data/eagle.rda"))
+```
+
+```{r}
+load(here::here("data/eagle.rda"))
+eagle_subset <- eagle %>% 
+  filter(year(eventDate) >=2000) %>%  
+  filter(Longitude >= 143.2506 & Longitude <= 145.2506 | Longitude >= 137.6007 & Longitude <= 139.6007) %>% 
+  filter(Latitude >= -24.4403 & Latitude <= -22.4403 | Latitude >= -35.9285 & Latitude <= -33.9285)
+  
+```
+
+# Limitations of the data
+
+This type of data is observational; more specifically they are occurrence data sets. This means that data is mainly provided on a voluntary basis, where citizen scientists and/or researchers will report and offer evidence when they spot a wedge-tailed eagle at a particular place. However, there are certain limitations to this. 
+
+Firstly, there may be bias towards certain geographic areas where some areas could have been more heavily studied/observed than others. This means that there may be locations within those areas where wedge-tailed eagles are actually found but not recorded, due to people not going to/not living near those locations. For instance, wedge-tailed eagle habitat preferences are generally wooded, forested land and open country; but they can also be found in alpine regions or near the sea (Murray, 2023)
+
+Additionally, there could be incomplete temporal coverage. This is because for occurrence data sets, an incident is recorded only when it is actually observed. As the existence of some wedge-tailed eagles could have been missed, it is therefore difficult to compile a complete and comprehensive occurrence dataset of all wedge-tailed eagles in a particular area. For example, there may be gaps in data collection during critical time periods, such as breeding season or migration, which may affect the analysis of changes in distribution of its species over time. Wedge-tailed eagles' breeding season varies depending on the region; June-August in South Australia and from April-September in the north (Billabong Sanctuary, n.d.)  
+
+
+# How the data was downloaded, and processed
+
+Firstly, using the `galah` package and `ala_occurrences` function, the occurrence data for wedge-tailed eagle sightings in Australia is downloaded from the ["Atlas of Living Australia database"](https://www.ala.org.au/). The `select_taxa` function is used to specify the taxonomic group of interest, which is the wedge-tailed eagle's scientific name: "Aquila (Uroaetus) audax". Each row represents a recorded wedge-tailed eagle sighting in Australia. After renaming the longitude and latitude columns and converting the 'eventDate' column to a date format, any rows with missing values for 'eventDate', 'Longitude', and 'Latitude' are also omitted using the `filter` function. Accounting for missing data helps to ensure that the data used for later analysis is more complete and accurate. Finally, the resulting data frame ('eagle') is saved as an .rda file in the 'data' folder. 
+
+The next step is creating a subset from the initial extracted dataset. After loading the 'eagle' data frame that was saved earlier, a new data frame ('eagle_subset') is created to include only occurrence records from the year 2000 onwards or later (thereby excluding records prior to Jan 1, 2000) using the `year` function to extract year from the 'eventDate' column. 
+
+Additional filters are also used to only select eagle occurrence records within 100km of the two specific locations of interest, which are Longreach and Adelaide. This includes only records with longitude values between 143.2506 and 145.2506 (for Longreach) or between 137.6007 and 139.6007 (for Adelaide), and latitude values between -24.4403 and -22.4403 (for Longreach) or between -35.9285 and -33.9285 (for Adelaide).   
+
+Hence, the analytics team can use this subset of the original 'eagle' data to investigate which location has a higher wedge-tailed eagle population and make informed decisions on which location would therefore have the least impact on wedge-tailed eagle populations (i.e. the location with lower wedge-tailed eagle population). 
+
+# Reference List 
+
+Atlas of Living Australia. (n.d.). Aquila (Uroaetus) audax: Wedge-Tailed Eagle [Data set]. Retrieved from https://bie.ala.org.au/species/https://biodiversity.org.au/afd/taxa/23e2ccef-06b0-4749-abc6-d8a710b94f69
+
+Billabong Sanctuary. (n.d.). Wedge-tailed Eagle. Retrieved from https://www.billabongsanctuary.com.au/wedge-tailed-eagle/
+
+Creative Commons. (n.d.). Attribution 3.0 Australia (CC BY 3.0 AU). Retrieved from https://creativecommons.org/licenses/by/3.0/au/
+
+iNaturalist, & Atlas of Living Australia. (n.d.). Wedge-tailed Eagle: Taxonomy. Retrieved from https://inaturalist.ala.org.au/taxa/5080-Aquila-audax 
+
+Murray, M. (2023). Wedge-tailed Eagle. Australian Museum. Retrieved from https://australian.museum/learn/animals/birds/wedge-tailed-eagle/
