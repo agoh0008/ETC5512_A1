@@ -1,6 +1,6 @@
 # ETC5512: Assignment 1 - Qantas Data Extraction Project
 
-This repository includes the work and materials for Assignment 1 of the ETC5512 unit (Wild-caught data). 
+This repository contains the work and materials for Assignment 1 of the ETC5512 unit (Wild-caught data). 
 
 ## Objective
 
